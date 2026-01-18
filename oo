@@ -132,7 +132,19 @@ local function CreateLockIndicator()
    
     lockIndicator.Parent = LocalPlayer:WaitForChild("PlayerGui")
 end
--- プレイヤーリストを取得する関数
+
+-- プレイヤーリストを取得する関数（「なし」オプションを含む）
+local function GetPlayerNames()
+    local names = {"なし"}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            table.insert(names, player.Name)
+        end
+    end
+    return names
+end
+
+-- プレイヤーリストを取得する関数（複数選択用）
 local function GetPlayerList()
     local playerList = {}
     for _, player in pairs(Players:GetPlayers()) do
@@ -141,18 +153,6 @@ local function GetPlayerList()
         end
     end
     return playerList
-end
-
--- プレイヤー名リストを取得する関数（ドロップダウン用）
-local function GetPlayerNames()
-    local names = {}
-    table.insert(names, "なし") -- 最初に「なし」オプションを追加
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            table.insert(names, p.Name)
-        end
-    end
-    return names
 end
 
 -- プレイヤーIDからプレイヤーを取得
@@ -164,6 +164,7 @@ local function GetPlayerByID(userId)
     end
     return nil
 end
+
 -- 壁判定関数
 local function CheckWallBetween(startPos, endPos)
     if not Settings.WallCheckEnabled then
@@ -195,6 +196,7 @@ local function CheckWallBetween(startPos, endPos)
    
     return false -- 壁なし
 end
+
 -- 方向による距離チェック関数
 local function IsWithinDirectionalDistance(localPos, enemyPos, localLook)
     local offset = enemyPos - localPos
@@ -229,6 +231,7 @@ local function IsWithinDirectionalDistance(localPos, enemyPos, localLook)
    
     return true
 end
+
 -- プレイヤーの健康状態を取得
 local function GetPlayerHealth(player)
     if player.Character then
@@ -239,6 +242,7 @@ local function GetPlayerHealth(player)
     end
     return 0, 100
 end
+
 -- ターゲットの優先度を計算
 local function CalculateTargetPriority(player, distance)
     if Settings.LockPriority == "LowestHealth" then
@@ -250,6 +254,7 @@ local function CalculateTargetPriority(player, distance)
         return 1 / (distance + 1) -- 距離が近いほど優先度高
     end
 end
+
 -- 最も適切な敵を取得する関数
 local function GetBestEnemy()
     local bestPlayer = nil
@@ -337,6 +342,7 @@ local function GetBestEnemy()
    
     return bestPlayer, bestDistance, hasWall
 end
+
 -- スムーズなカメラ移動
 local function SmoothLookAt(targetPosition)
     local currentCFrame = Camera.CFrame
@@ -351,6 +357,7 @@ local function SmoothLookAt(targetPosition)
     local tween = TweenService:Create(Camera, tweenInfo, {CFrame = targetCFrame})
     tween:Play()
 end
+
 -- 頭に視点を固定する関数
 local function LockToHead()
     if not Settings.LockEnabled then return end
@@ -613,6 +620,7 @@ local function LockToHead()
         end
     end
 end
+
 -- Name ESPを作成する関数
 local function CreateNameESP(player)
     if not player.Character or not player.Character:FindFirstChild("Head") then return end
@@ -653,6 +661,7 @@ local function CreateNameESP(player)
    
     nameESPConnections[player] = {nameTag = nameTag, connection = connection}
 end
+
 -- Health ESPを作成する関数
 local function CreateHealthESP(player)
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
@@ -720,6 +729,7 @@ local function CreateHealthESP(player)
    
     healthESPConnections[player] = {healthBar = healthBar, healthText = healthText, connection = connection}
 end
+
 -- Box ESPを作成する関数
 local function CreateBoxESP(player)
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
@@ -763,6 +773,7 @@ local function CreateBoxESP(player)
    
     boxESPConnections[player] = {box = box, connection = connection}
 end
+
 -- Traceを作成する関数（超薄い赤色）
 local function CreateTrace(player)
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
@@ -799,6 +810,7 @@ local function CreateTrace(player)
    
     traceConnections[player] = {trace = trace, connection = connection}
 end
+
 -- ESPを更新する関数（選択されたプレイヤーのみに適用）
 local function UpdateESP()
     -- 既存のESPをすべて削除
@@ -838,6 +850,7 @@ local function UpdateESP()
         end
     end
 end
+
 -- プレイヤー追加時の処理
 Players.PlayerAdded:Connect(function(player)
     task.wait(1)
@@ -859,6 +872,7 @@ Players.PlayerAdded:Connect(function(player)
         multiESPDropdown:Refresh(GetPlayerList(), true)
     end
 end)
+
 Players.PlayerRemoving:Connect(function(player)
     if traceConnections[player] then
         traceConnections[player].connection:Disconnect()
@@ -891,6 +905,7 @@ Players.PlayerRemoving:Connect(function(player)
         multiESPDropdown:Refresh(GetPlayerList(), true)
     end
 end)
+
 -- リセット関数
 local function ResetLock()
     if lockConnection then
@@ -907,6 +922,7 @@ local function ResetLock()
    
     Notify("🔄 リセット", "ロックシステムをリセットしました", 2)
 end
+
 -- メインタブの機能
 local LockToggle = MainTab:CreateToggle({
     Name = "🔒 ヘッドロック メイン",
@@ -922,6 +938,7 @@ local LockToggle = MainTab:CreateToggle({
         end
     end,
 })
+
 MainTab:CreateButton({
     Name = "🔄 ロックリセット",
     Callback = function()
@@ -929,7 +946,7 @@ MainTab:CreateButton({
     end,
 })
 
--- ========== ターゲット選択機能（新しく追加）==========
+-- ターゲット選択機能
 MainTab:CreateSection("🎯 ターゲット設定")
 
 -- ドロップダウン（前方宣言して更新可能にする）
@@ -978,7 +995,6 @@ MainTab:CreateInput({
         end
     end,
 })
--- ========== ターゲット選択機能ここまで ==========
 
 MainTab:CreateSection("👁️ ESPシステム")
 local NameESPToggle = MainTab:CreateToggle({
@@ -1017,6 +1033,7 @@ local TraceToggle = MainTab:CreateToggle({
         UpdateESP()
     end,
 })
+
 -- 複数選択タブ (ヘッドロックターゲット用)
 MultiSelectTab:CreateSection("複数ターゲット選択 (最大25人)")
 multiTargetDropdown = MultiSelectTab:CreateDropdown({
@@ -1035,6 +1052,7 @@ multiTargetDropdown = MultiSelectTab:CreateDropdown({
         Notify("🎯 複数ターゲット設定", "選択数: " .. #Settings.TargetPlayers, 3)
     end,
 })
+
 -- 複数選択ESP項目タブ (ESP対象用)
 MultiESPSelectTab:CreateSection("複数ESP対象選択 (最大25人)")
 multiESPDropdown = MultiESPSelectTab:CreateDropdown({
@@ -1054,6 +1072,7 @@ multiESPDropdown = MultiESPSelectTab:CreateDropdown({
         UpdateESP()
     end,
 })
+
 -- 設定タブ
 SettingsTab:CreateSection("📏 ロック距離設定")
 local LockDistanceSlider = SettingsTab:CreateSlider({
@@ -1106,6 +1125,7 @@ local LockDistanceRightSlider = SettingsTab:CreateSlider({
         Settings.LockDistanceRight = Value
     end,
 })
+
 SettingsTab:CreateSection("⏱️ ロックタイミング設定")
 local WallCheckToggle = SettingsTab:CreateToggle({
     Name = "🧱 壁判定",
@@ -1148,6 +1168,7 @@ local CooldownSlider = SettingsTab:CreateSlider({
         Settings.CooldownTime = Value
     end,
 })
+
 SettingsTab:CreateSection("🎮 高度な設定")
 local SmoothLockToggle = SettingsTab:CreateToggle({
     Name = "🌀 スムーズロック",
@@ -1183,6 +1204,7 @@ local LockPriorityDropdown = SettingsTab:CreateDropdown({
         end
     end,
 })
+
 SettingsTab:CreateSection("🔧 トレース設定")
 local TraceThicknessSlider = SettingsTab:CreateSlider({
     Name = "トレースの太さ",
@@ -1194,6 +1216,7 @@ local TraceThicknessSlider = SettingsTab:CreateSlider({
         Settings.TraceThickness = Value
     end,
 })
+
 SettingsTab:CreateSection("🔔 通知設定")
 local NotificationToggle = SettingsTab:CreateToggle({
     Name = "通知表示",
@@ -1238,11 +1261,13 @@ local ResetOnDeathToggle = SettingsTab:CreateToggle({
         Settings.ResetOnDeath = Value
     end,
 })
+
 -- 情報タブ
 InfoTab:CreateSection("📊 システム情報")
 InfoTab:CreateLabel("現在のターゲット: " .. (currentTarget and currentTarget.Name or "なし"))
 InfoTab:CreateLabel("ロック状態: " .. (isLocking and "🔒 ロック中" or "🔓 未ロック"))
 InfoTab:CreateLabel("壁判定: " .. (Settings.WallCheckEnabled and "有効" or "無効"))
+
 InfoTab:CreateSection("📈 ターゲット履歴")
 local historyLabel = InfoTab:CreateLabel("履歴は最大10件保存されます")
 InfoTab:CreateButton({
@@ -1260,6 +1285,7 @@ InfoTab:CreateButton({
         historyLabel:SetText(historyText)
     end,
 })
+
 InfoTab:CreateSection("ℹ️ 使い方")
 InfoTab:CreateParagraph({
     Title = "基本操作",
@@ -1273,25 +1299,27 @@ InfoTab:CreateParagraph({
     Title = "ESP機能",
     Content = "ネームESP: プレイヤー名を表示\nヘルスESP: HPバーと数値を表示\nボックスESP: プレイヤー周囲にボックスを表示\nトレース: プレイヤーへの超薄い赤線"
 })
+
 -- プレイヤーリストを更新
 task.spawn(function()
     while task.wait(2) do
-        local currentList = GetPlayerList()
         if playerDropdown then
             playerDropdown:Refresh(GetPlayerNames())
         end
         if multiTargetDropdown then
-            multiTargetDropdown:Refresh(currentList, true)
+            multiTargetDropdown:Refresh(GetPlayerList(), true)
         end
         if multiESPDropdown then
-            multiESPDropdown:Refresh(currentList, true)
+            multiESPDropdown:Refresh(GetPlayerList(), true)
         end
     end
 end)
+
 -- メインループ
 RunService.RenderStepped:Connect(function()
     LockToHead()
 end)
+
 -- キーバインド設定（オプション）
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
@@ -1305,13 +1333,16 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         ResetLock()
     end
 end)
+
 -- 初期化
 task.spawn(function()
     task.wait(2)
     CreateLockIndicator()
     UpdateESP()
 end)
+
 Rayfield:LoadConfiguration()
+
 -- 終了時のクリーンアップ
 game:GetService("CoreGui").ChildRemoved:Connect(function(child)
     if child.Name == "Rayfield" then
